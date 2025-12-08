@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KalapujSol {
+namespace KalapujSolU0.Models {
     public enum TipoManillar {
         Undefined = 0,
         Recto = 1,

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KalapujSol
+namespace KalapujSolU0.Exceptions
 {
     public class ValorInvalidoException : Exception
     {

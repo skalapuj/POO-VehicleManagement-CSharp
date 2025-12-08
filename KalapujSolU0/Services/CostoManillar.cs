@@ -1,6 +1,7 @@
-﻿using System;
+﻿using KalapujSolU0.Models;
+using System;
 
-namespace KalapujSol
+namespace KalapujSolU0.Services
 {
     public static class CostoManillar {
         public static decimal ObtenerCosto(TipoManillar tipo) {

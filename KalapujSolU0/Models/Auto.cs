@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KalapujSol {
+namespace KalapujSolU0.Models {
     public class Auto : Vehiculo, IMantenimiento {
         private int cantidadPuertas;
 
@@ -11,6 +11,9 @@ namespace KalapujSol {
                 cantidadPuertas = value;
             }
         }
+
+        // Constructor vacío requerido para deserialización
+        public Auto() { }
 
         public Auto(string marca, string modelo, int patentamiento, decimal precio, int cilindrada, int puertas)
             : base(marca, modelo, patentamiento, precio, cilindrada) {

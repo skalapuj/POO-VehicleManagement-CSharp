@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KalapujSol {
+namespace KalapujSolU0.Models {
     public class Camion : Vehiculo, IMantenimiento {
         private double capacidadDeCarga;
 
@@ -11,6 +11,9 @@ namespace KalapujSol {
                 capacidadDeCarga = value;
             }
         }
+
+        // Constructor vacío requerido para deserialización
+        public Camion() { }
 
         public Camion(string marca, string modelo, int patentamiento, decimal precio, int cilindrada, double carga)
             : base(marca, modelo, patentamiento, precio, cilindrada) {

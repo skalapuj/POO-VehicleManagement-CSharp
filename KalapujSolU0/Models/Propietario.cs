@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KalapujSol {
+namespace KalapujSolU0.Models {
     public class Propietario {
         public string Nombre { get; set; }
         public string Dni { get; set; }

@@ -1,6 +1,7 @@
-﻿using System;
+﻿using KalapujSolU0.Exceptions;
+using System;
 
-namespace KalapujSol {
+namespace KalapujSolU0.Models{
     public abstract class Vehiculo {
         private string? marca;
         private string? modelo;
@@ -42,6 +43,9 @@ namespace KalapujSol {
                 cilindrada = value;
             }
         }
+
+        // Constructor vacío requerido para deserialización
+        public Vehiculo() { }
 
         protected Vehiculo(string marca, string modelo, int patentamiento, decimal precio, int cilindrada) {
             Marca = marca;

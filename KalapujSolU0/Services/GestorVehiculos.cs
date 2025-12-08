@@ -1,18 +1,41 @@
-﻿using System;
+﻿using KalapujSolU0.Exceptions;
+using KalapujSolU0.Models;
 
-namespace KalapujSol
+namespace KalapujSolU0.Services
 {
     internal class GestorVehiculos
     {
         //============== Campos privados =============//
         // Lista de marcas disponibles 
-        private List<string> marcasDisponibles = new() { "Toyota", "Ford", "Chevrolet", "Honda", "Renault" };
-
+        private readonly List<string> marcasDisponibles = ["Toyota", "Ford", "Chevrolet", "Honda", "Renault"];
 
         // Registro de patente con su vehículos y su propietario asociado
-        private Dictionary<string, (Vehiculo Vehiculo, Propietario Propietario)> registroVehiculos = new();
+        private readonly Dictionary<string, (Vehiculo Vehiculo, Propietario Propietario)> registroVehiculos = [];
+
+        // Instancia de la clase Persistencia para manejar el almacenamiento de datos
+        private readonly Persistencia persistencia = new ();
 
 
+        //============== Gestion de persistencia =============//
+        public void GuardarTodo() {
+            persistencia.Guardar(marcasDisponibles, registroVehiculos);
+        }
+
+        public void CargarTodo() {
+            persistencia.Cargar(marcasDisponibles, registroVehiculos);
+        }
+
+        public string ObtenerDirectorioAct(){
+            return persistencia.ObtenerDirectorioActual();
+        }
+        public void CambiarDirectorio(string nuevaRuta) {
+            persistencia.CambiarDirectorio(nuevaRuta);
+        }
+
+        public void BorrarTodo() {
+            persistencia.BorrarTodo();
+            registroVehiculos.Clear();
+        }
 
         //============== Delegados =============//
         public Action<Vehiculo> MostrarNormal = v => Console.WriteLine("\n[Normal]\n" + v.ToString());
@@ -39,6 +62,7 @@ namespace KalapujSol
             }
 
             marcasDisponibles.Add(marcaNueva);
+            GuardarTodo();
             Console.WriteLine("Marca agregada correctamente");
         }
 
@@ -67,7 +91,7 @@ namespace KalapujSol
 
 
         //============== Gestion de vehículos =============//
-        public Vehiculo CrearVehiculo(int tipo, string marca, string modelo, int patentamiento, decimal precio, int cilindrada, int puertas = 0, TipoManillar tipoManillar = 0, double capacidadCarga = 0)
+        public static Vehiculo CrearVehiculo(int tipo, string marca, string modelo, int patentamiento, decimal precio, int cilindrada, int puertas = 0, TipoManillar tipoManillar = 0, double capacidadCarga = 0)
         {
             return tipo switch
             {
@@ -88,6 +112,7 @@ namespace KalapujSol
             }
 
             registroVehiculos.Add(patente.Trim().ToUpper(), (v, p));
+            GuardarTodo();
             Console.WriteLine("\nVehículo y propietario agregados correctamente.");
         }
 
@@ -99,6 +124,7 @@ namespace KalapujSol
             // La eliminación es directa y eficiente por clave
             if (registroVehiculos.Remove(patenteLimpia))
             {
+                GuardarTodo();
                 Console.WriteLine($"\nSe eliminó el vehículo con patente {patenteLimpia}.");
             }
             else
@@ -119,36 +145,36 @@ namespace KalapujSol
 
                 if ((tipo == 0 && vehiculoOriginal is Auto) || tipo == 1)
                 {
-                    var autoOriginal = vehiculoOriginal as Auto;
-                     vehiculoActualizado = new Auto(    (marca == "") ? vehiculoOriginal.Marca : marca,
-                                                        (modelo == "") ? vehiculoOriginal.Modelo : modelo,
-                                                        (nuevoPatentamiento == 0) ? vehiculoOriginal.Patentamiento : nuevoPatentamiento,
-                                                        (precio == 0) ? vehiculoOriginal.Precio : precio,
-                                                        (cilindrada == 0) ? vehiculoOriginal.Cilindrada : cilindrada,
-                                                        (puertas == 0 && autoOriginal != null) ? autoOriginal.CantidadPuertas : puertas
-                                                    );
+                    vehiculoActualizado = new Auto(
+                        (marca == "") ? vehiculoOriginal.Marca : marca,
+                        (modelo == "") ? vehiculoOriginal.Modelo : modelo,
+                        (nuevoPatentamiento == 0) ? vehiculoOriginal.Patentamiento : nuevoPatentamiento,
+                        (precio == 0) ? vehiculoOriginal.Precio : precio,
+                        (cilindrada == 0) ? vehiculoOriginal.Cilindrada : cilindrada,
+                        (puertas == 0 && vehiculoOriginal is Auto a) ? a.CantidadPuertas : puertas
+                    );
                 }
                 else if ((tipo == 0 && vehiculoOriginal is Moto) || tipo == 2)
                 {
-                    var motoOriginal = vehiculoOriginal as Moto;
-                    vehiculoActualizado = new Moto(     (marca == "") ? vehiculoOriginal.Marca : marca,
-                                                        (modelo == "") ? vehiculoOriginal.Modelo : modelo,
-                                                        (nuevoPatentamiento == 0) ? vehiculoOriginal.Patentamiento : nuevoPatentamiento,
-                                                        (precio == 0) ? vehiculoOriginal.Precio : precio,
-                                                        (cilindrada == 0) ? vehiculoOriginal.Cilindrada : cilindrada,
-                                                        (tipoManillar == 0 && motoOriginal != null) ? motoOriginal.TipoManillar : tipoManillar
-                                                    );
+                    vehiculoActualizado = new Moto(
+                        (marca == "") ? vehiculoOriginal.Marca : marca,
+                        (modelo == "") ? vehiculoOriginal.Modelo : modelo,
+                        (nuevoPatentamiento == 0) ? vehiculoOriginal.Patentamiento : nuevoPatentamiento,
+                        (precio == 0) ? vehiculoOriginal.Precio : precio,
+                        (cilindrada == 0) ? vehiculoOriginal.Cilindrada : cilindrada,
+                        (tipoManillar == 0 && vehiculoOriginal is Moto m) ? m.TipoManillar : tipoManillar
+                    );
                 }
                 else if ((tipo == 0 && vehiculoOriginal is Camion) || tipo == 3)
                 {
-                    var camionOriginal = vehiculoOriginal as Camion;
-                    vehiculoActualizado = new Camion(   (marca == "") ? vehiculoOriginal.Marca : marca,
-                                                        (modelo == "") ? vehiculoOriginal.Modelo : modelo,
-                                                        (nuevoPatentamiento == 0) ? vehiculoOriginal.Patentamiento : nuevoPatentamiento,
-                                                        (precio == 0) ? vehiculoOriginal.Precio : precio,
-                                                        (cilindrada == 0) ? vehiculoOriginal.Cilindrada : cilindrada,
-                                                        (capacidadCarga == 0 && camionOriginal != null) ? camionOriginal.CapacidadDeCarga : capacidadCarga
-                                                    );
+                    vehiculoActualizado = new Camion(
+                        (marca == "") ? vehiculoOriginal.Marca : marca,
+                        (modelo == "") ? vehiculoOriginal.Modelo : modelo,
+                        (nuevoPatentamiento == 0) ? vehiculoOriginal.Patentamiento : nuevoPatentamiento,
+                        (precio == 0) ? vehiculoOriginal.Precio : precio,
+                        (cilindrada == 0) ? vehiculoOriginal.Cilindrada : cilindrada,
+                        (capacidadCarga == 0 && vehiculoOriginal is Camion c) ? c.CapacidadDeCarga : capacidadCarga
+                    );
                 }
                 else
                 {
@@ -156,6 +182,7 @@ namespace KalapujSol
                 }
 
                 registroVehiculos[patenteLimpia] = (vehiculoActualizado!, registro.Propietario);
+                GuardarTodo();
                 Console.WriteLine($"\nSe actualizó el vehículo con patente {patenteLimpia}.");
                 return vehiculoActualizado!;
             }
@@ -240,13 +267,13 @@ namespace KalapujSol
         }
 
 
-        public void MostrarVehiculo(Vehiculo v, Action<Vehiculo> estrategia)
+        public static void MostrarVehiculo(Vehiculo v, Action<Vehiculo> estrategia)
         {
             estrategia(v);
         }
 
 
-        public void MostrarVehiculoTexto(Vehiculo v, Func<Vehiculo, string> estrategia)
+        public static void MostrarVehiculoTexto(Vehiculo v, Func<Vehiculo, string> estrategia)
         {
             string resultado = estrategia(v);
             Console.WriteLine(resultado);

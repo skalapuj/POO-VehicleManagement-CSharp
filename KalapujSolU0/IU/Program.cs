@@ -1,6 +1,6 @@
-﻿using System;
-using System.Numerics;
-using System.Runtime.Intrinsics.X86;
+﻿using KalapujSolU0.Exceptions;
+using KalapujSolU0.Models;
+using KalapujSolU0.Services;
 
 // === MODIFICACIONES Y NUEVOS ELEMENTOS - UNIDAD 3 ===
 //
@@ -70,209 +70,64 @@ using System.Runtime.Intrinsics.X86;
 //    lo que conllevo a una restructuración general que permita identificar a lo vehículos por
 //    su patente de manera unívoca.
 //
+// Módulo de persistencia con archivos, directorios y JSON.
+//  - En esta etapa se agregaron:
+//      - Guardado de datos en formato JSON
+//      - Carga automática desde el archivo
+//      - Directorio configurable por el usuario
+//      - Archivo de configuración para recordar la carpeta seleccionada
+//      - Función para borrar todos los datos guardados
+//
 // ====================================================
 
-namespace KalapujSol {
-    class Program {
-
-        ///=============================  Funciones auxiliares ============================= 
-        // Muestra un mensaje y lee una cadena de texto, validando que no esté vacía.
-        static string PedirCadena(string prompt, string mensajeError)
-        {
-            Console.Write(prompt);
-            string input = Console.ReadLine() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(input.Trim()))
-                throw new ValorInvalidoException(mensajeError);
-
-            return input.Trim();
-        }
-
-
-        /// Muestra un mensaje y lee un entero, validando su formato y un rango opcional.
-        static int PedirEntero(string prompt, string mensajeError, int min = int.MinValue, int max = int.MaxValue)
-        {
-            Console.Write(prompt);
-            if (!int.TryParse(Console.ReadLine(), out int valor))
-                throw new ValorInvalidoException(mensajeError);
-
-            if (valor < min || valor > max)
-                throw new ValorInvalidoException($"El valor debe estar entre {min} y {max}.");
-
-            return valor;
-        }
-
-
-        /// Muestra un mensaje y lee un decimal, validando su formato.
-        static decimal PedirDecimal(string prompt, string mensajeError)
-        {
-            Console.Write(prompt);
-            if (!decimal.TryParse(Console.ReadLine(), out decimal valor))
-                throw new ValorInvalidoException(mensajeError);
-
-            return valor;
-        }
-
-
-        /// Muestra un mensaje y lee un double, validando su formato.
-        static double PedirDouble(string prompt, string mensajeError)
-        {
-            Console.Write(prompt);
-            if (!double.TryParse(Console.ReadLine(), out double valor))
-                throw new ValorInvalidoException(mensajeError);
-
-            return valor;
-        }
-
-
-        /// Solicita al usuario que seleccione una marca de la lista del gestor.
-        static string PedirMarca(GestorVehiculos gestor) 
-        {
-            gestor.MostrarMarcasDisponibles();
-            Console.Write("\nSeleccione una marca por número: ");
-
-            if (int.TryParse(Console.ReadLine(), out int indice) &&
-                indice >= 1 && indice <= gestor.ObtenerCantidadMarcas())
-            {
-                string marca = gestor.ObtenerMarcaPorIndice(indice - 1);
-                Console.WriteLine($"Marca seleccionada: {marca}");
-                return marca;
-            }
-            else
-            {
-                throw new ValorInvalidoException("La marca seleccionada no existe en el catálogo.");
-            }
-        }
-
-
-        /// Solicita al usuario que seleccione un tipo de vehículo.
-        static int PedirTipoVehiculo()
-        {
-            int option;
-            
-            while (true)
-            {
-                Console.WriteLine("\nElija el tipo de vehículo a instanciar:");
-                Console.WriteLine("1 - Auto");
-                Console.WriteLine("2 - Moto");
-                Console.WriteLine("3 - Camion");
-                Console.Write("Opción: ");
-
-                if (int.TryParse(Console.ReadLine(), out option) && (option >= 1 && option <= 3))
-                {
-                    return option; 
-                }
-                else
-                {
-                    Console.WriteLine("Opción inválida. Por favor, ingrese un número entre 1 y 3.\n");
-                }
-            }
-        }
-        
-        
-        /// Solicita al usuario que ingrese y valide el tipo de manillar para una moto.
-        static TipoManillar PedirTipoManillar()
-        {
-            int op;
-            while (true)
-            {
-                Console.WriteLine("Selecciona el tipo de manillar:");
-                Console.WriteLine("  1. Recto");
-                Console.WriteLine("  2. Curvo");
-                Console.WriteLine("  3. Deportivo");
-                Console.Write("Ingrese una opción (1-3): ");
-
-                if (int.TryParse(Console.ReadLine(), out op) &&
-                    Enum.IsDefined(typeof(TipoManillar), op))
-                {
-                    return (TipoManillar)(op);
-                }
-                else
-                {
-                    Console.WriteLine("Opción inválida. Por favor, ingrese un número entre 1 y 3.\n");
-                }
-            }
-        }
-
-
-        /// Solicita la patente y valida su longitud.
-        static string PedirPatente(string prompt = "Patente: ")
-        {
-            string patente = PedirCadena(prompt, "Debe ingresar una patente válida.");
-
-            if (patente.Trim().Length < 6 || patente.Trim().Length > 7)
-                throw new ValorInvalidoException("La patente debe tener entre 6 y 7 caracteres.");
-
-            return patente;
-        }
-
-
-        /// Gestiona la actualización de un valor mediante una función delegada.
-        static string GestionarActualizacion(string prompt, Func<string> obtenerNuevoValor)
-        {
-            string opt = "";
-            string nuevoValor = "";
-
-            while (true) 
-            {
-                opt = PedirCadena(prompt + " (Y o N): ", "Opción inválida");
-                opt = opt.Trim().ToUpper();
-
-                if (opt == "Y")
-                {
-                    // Ejecuto la función delegada para obtener el nuevo valor.
-                    // Si la función interna lanza una excepción (ej: ValorInvalidoException),
-                    // el bucle de arriba lo capturará, pero aquí solo se ejecuta.
-                    nuevoValor = obtenerNuevoValor();
-                    break;
-                }
-                else if (opt == "N")
-                {
-                    nuevoValor = ""; 
-                    break;
-                }
-                else
-                {
-                    Console.WriteLine("Opción inválida. Por favor, ingrese 'Y' o 'N'.");
-                }
-            }
-            return nuevoValor;
-        }
-
-
-
+namespace KalapujSolU0.IU
+{
+    class Program
+    {
         //============================= PUNTO DE ENTRADA ========================
-        static void Main(string[] args) {
+        static void Main()
+        {
+            
             var gestor = new GestorVehiculos();
             bool salir = false;
 
-            Console.WriteLine("=== Proyecto POO de Sol Kalapuj: Sistema de Vehículos ===\n");
+            // ---------------------------------------------------------------------
+            Console.WriteLine("---------------------------------------------------");
+            Console.WriteLine("   Sistema de Gestión de Vehículos - Sol Kalapuj   ");
+            Console.WriteLine("---------------------------------------------------");
+            Console.WriteLine($"Directorio actual para serializar datos: {gestor.ObtenerDirectorioAct()}");
+            string newDir = GestionarActualizacion( "¿Desea utilizar otro directorio para cargar los datos inciales?",
+                                    () => PedirCadena("Nuevo directorio: ", "El directorio debe ser válido."));
+            if(newDir != "")
+                gestor.CambiarDirectorio(newDir);  
+                
+            gestor.CargarTodo();
 
-            while (!salir)
-            {
-                try
-                {
+            
+            while (!salir) {
+                try {
                     Console.WriteLine("\n=== MENÚ PRINCIPAL ===");
-                    Console.WriteLine("1 - Ver marcas disponibles");
-                    Console.WriteLine("2 - Agregar Marca");
-                    Console.WriteLine("3 - Agregar vehículo a la lista");
-                    Console.WriteLine("4 - Mostrar todos los vehículos");
-                    Console.WriteLine("5 - Ordenar vehículos por precio");
-                    Console.WriteLine("6 - Buscar vehículo por marca");
-                    Console.WriteLine("7 - Actualizar vehiculo creado");
-                    Console.WriteLine("8 - Eliminar vehículo");
-                    Console.WriteLine("0 - Salir");
+                    Console.WriteLine(" 1 - Ver marcas disponibles");
+                    Console.WriteLine(" 2 - Agregar Marca");
+                    Console.WriteLine(" 3 - Agregar vehículo a la lista");
+                    Console.WriteLine(" 4 - Mostrar todos los vehículos");
+                    Console.WriteLine(" 5 - Ordenar vehículos por precio");
+                    Console.WriteLine(" 6 - Buscar vehículo por marca");
+                    Console.WriteLine(" 7 - Actualizar vehiculo creado");
+                    Console.WriteLine(" 8 - Eliminar vehículo");
+                    Console.WriteLine(" 9 - Borrar todo");
+                    Console.WriteLine("10 - Cambiar directorio de guardado");
+                    Console.WriteLine(" 0 - Salir");
                     Console.Write("Opción: ");
                     string opcion = Console.ReadLine() ?? "opcion ausente";
 
-                    switch (opcion)
-                    {
+                    switch (opcion) {
                         case "1":
                             gestor.MostrarMarcasDisponibles();
                             break;
 
                         case "2":
-                            string marcaNueva = PedirCadena("Ingrese una nueva Marca: ", "La marca nueva debe contener un valor para poder ser agregada en el catálogo."); 
+                            string marcaNueva = PedirCadena("Ingrese una nueva Marca: ", "La marca nueva debe contener un valor para poder ser agregada en el catálogo.");
                             gestor.AgregarMarca(marcaNueva);
                             break;
 
@@ -280,7 +135,7 @@ namespace KalapujSol {
                             // Pido datos base del vehículo
                             string marca = PedirMarca(gestor);
                             string modelo = PedirCadena("Modelo: ", "Debe ingresar un modelo válido.");
-                            int patentamiento = PedirEntero("Año de patentamiento: ", "El año de patentamiento debe ser un número entero."); 
+                            int patentamiento = PedirEntero("Año de patentamiento: ", "El año de patentamiento debe ser un número entero.");
                             decimal precio = PedirDecimal("Precio: ", "El precio debe ser numérico.");
                             int cilindrada = PedirEntero("Cilindrada (cc): ", "La cilindrada debe ser un número entero.");
 
@@ -288,30 +143,30 @@ namespace KalapujSol {
                             Vehiculo vehiculoCreado;
                             int option = PedirTipoVehiculo();
 
-                            if (option == 1) 
+                            if (option == 1)
                             {
                                 int puertas = PedirEntero("Cantidad de puertas: ", "La cantidad de puertas debe ser numérica.");
-                                vehiculoCreado = gestor.CrearVehiculo(option, marca, modelo, patentamiento, precio, cilindrada, puertas);
+                                vehiculoCreado = GestorVehiculos.CrearVehiculo(option, marca, modelo, patentamiento, precio, cilindrada, puertas);
                             }
-                            else if (option == 2) 
+                            else if (option == 2)
                             {
-                                TipoManillar tipoManillar = PedirTipoManillar(); 
-                                vehiculoCreado = gestor.CrearVehiculo(option, marca, modelo, patentamiento, precio, cilindrada, 0, tipoManillar);
+                                TipoManillar tipoManillar = PedirTipoManillar();
+                                vehiculoCreado = GestorVehiculos.CrearVehiculo(option, marca, modelo, patentamiento, precio, cilindrada, 0, tipoManillar);
                             }
-                            else if (option == 3) 
+                            else if (option == 3)
                             {
                                 double carga = PedirDouble("Capacidad de carga: ", "La capacidad de carga debe ser numérica.");
-                                vehiculoCreado = gestor.CrearVehiculo(option, marca, modelo, patentamiento, precio, cilindrada, 0, 0, carga);
+                                vehiculoCreado = GestorVehiculos.CrearVehiculo(option, marca, modelo, patentamiento, precio, cilindrada, 0, 0, carga);
                             }
                             else
                             {
-                                throw new Exception("Error inesperado en la selección de tipo de vehículo."); 
+                                throw new Exception("Error inesperado en la selección de tipo de vehículo.");
                             }
 
                             // Pido datos base del propietario y lo creo
                             string nombreProp = PedirCadena("Nombre del propietario: ", "Debe ingresar un nombre válido.");
                             string dni = PedirCadena("DNI: ", "Debe ingresar un DNI válido.");
-                            Propietario propietario = new Propietario(nombreProp, dni);
+                            var propietario = new Propietario(nombreProp, dni);
 
 
 
@@ -339,13 +194,13 @@ namespace KalapujSol {
                             string modo = PedirCadena("Opción: ", "Opción inválida.");
 
                             if (modo == "1")
-                                gestor.MostrarVehiculo(vehiculoCreado, gestor.MostrarNormal);
+                                GestorVehiculos.MostrarVehiculo(vehiculoCreado, gestor.MostrarNormal);
                             else
                             if (modo == "2")
-                                gestor.MostrarVehiculo(vehiculoCreado, gestor.MostrarConDescuento);
+                                GestorVehiculos.MostrarVehiculo(vehiculoCreado, gestor.MostrarConDescuento);
                             else
                             if (modo == "3")
-                                gestor.MostrarVehiculoTexto(vehiculoCreado, gestor.DescripcionBreve);
+                                GestorVehiculos.MostrarVehiculoTexto(vehiculoCreado, gestor.DescripcionBreve);
                             else
                                 Console.WriteLine("Opción inválida.");
 
@@ -365,7 +220,7 @@ namespace KalapujSol {
 
                         case "6":
                             Console.Write("Ingrese marca a buscar: ");
-                            string buscada = Console.ReadLine() ?? "marca a buscar ausente"; 
+                            string buscada = Console.ReadLine() ?? "marca a buscar ausente";
                             gestor.BuscarVehiculoPorMarca(buscada);
                             break;
 
@@ -379,7 +234,7 @@ namespace KalapujSol {
 
                             newMarca = GestionarActualizacion(
                                 "¿Desea actualizar la marca?",
-                                () => PedirMarca(gestor) 
+                                () => PedirMarca(gestor)
                             );
 
                             newModelo = GestionarActualizacion(
@@ -394,9 +249,9 @@ namespace KalapujSol {
                             newAnioPatentamiento = string.IsNullOrEmpty(stringAux) ? 0 : int.Parse(stringAux);
 
                             stringAux = GestionarActualizacion(
-                                 "¿Desea actualizar el precio?",
-                                 () => PedirDecimal("Precio: ", "El precio debe ser numérico.").ToString()
-                             );
+                                    "¿Desea actualizar el precio?",
+                                    () => PedirDecimal("Precio: ", "El precio debe ser numérico.").ToString()
+                                );
                             newPrecio = string.IsNullOrEmpty(stringAux) ? 0m : decimal.Parse(stringAux);
 
                             stringAux = GestionarActualizacion(
@@ -448,7 +303,7 @@ namespace KalapujSol {
                             }
 
                             Vehiculo vehiculoAct = gestor.ActualizarVehiculo(patenteAct, newMarca, newModelo, newAnioPatentamiento, newPrecio, newCilindrada, newTipoVehiculo, newPuertas, newtipoManillar, newCarga);
-                            
+
                             // Muestro la info usando ToString sobrescrito
                             Console.WriteLine("\nObjeto actualizado:");
                             Console.WriteLine(vehiculoAct.ToString());
@@ -460,6 +315,17 @@ namespace KalapujSol {
 
                             gestor.EliminarVehiculo(patenteDel);
                             break;
+
+                        case "9":
+                            gestor.BorrarTodo();
+                            break;
+
+                        case "10":
+                            string newDirectory = PedirCadena("Nuevo directorio: ", "El directorio debe ser válido.");
+                            gestor.CambiarDirectorio(newDirectory);
+                            break;
+
+                        
 
                         case "0":
                             salir = true;
@@ -484,8 +350,163 @@ namespace KalapujSol {
                     Console.WriteLine($"\n[ERROR NO CONTROLADO]: {ex.Message}\n");
                 }
             }
-
+            
             Console.WriteLine("\nPrograma finalizado. ¡Gracias por usar el sistema!");
         }
+
+
+        ///=============================  Funciones auxiliares ============================= 
+        static string PedirCadena(string prompt, string mensajeError)
+        {
+            Console.Write(prompt);
+            string input = Console.ReadLine() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(input.Trim()))
+                throw new ValorInvalidoException(mensajeError);
+
+            return input.Trim();
+        }
+
+
+        static int PedirEntero(string prompt, string mensajeError, int min = int.MinValue, int max = int.MaxValue)
+        {
+            Console.Write(prompt);
+            if (!int.TryParse(Console.ReadLine(), out int valor))
+                throw new ValorInvalidoException(mensajeError);
+
+            if (valor < min || valor > max)
+                throw new ValorInvalidoException($"El valor debe estar entre {min} y {max}.");
+
+            return valor;
+        }
+
+
+        static decimal PedirDecimal(string prompt, string mensajeError)
+        {
+            Console.Write(prompt);
+            if (!decimal.TryParse(Console.ReadLine(), out decimal valor))
+                throw new ValorInvalidoException(mensajeError);
+
+            return valor;
+        }
+
+
+        static double PedirDouble(string prompt, string mensajeError)
+        {
+            Console.Write(prompt);
+            if (!double.TryParse(Console.ReadLine(), out double valor))
+                throw new ValorInvalidoException(mensajeError);
+
+            return valor;
+        }
+
+
+        static string PedirMarca(GestorVehiculos gestor)
+        {
+            gestor.MostrarMarcasDisponibles();
+            Console.Write("\nSeleccione una marca por número: ");
+
+            if (int.TryParse(Console.ReadLine(), out int indice) &&
+                indice >= 1 && indice <= gestor.ObtenerCantidadMarcas())
+            {
+                string marca = gestor.ObtenerMarcaPorIndice(indice - 1);
+                Console.WriteLine($"Marca seleccionada: {marca}");
+                return marca;
+            }
+            else
+            {
+                throw new ValorInvalidoException("La marca seleccionada no existe en el catálogo.");
+            }
+        }
+
+
+        static int PedirTipoVehiculo()
+        {
+            while (true)
+            {
+                Console.WriteLine("\nElija el tipo de vehículo a instanciar:");
+                Console.WriteLine("1 - Auto");
+                Console.WriteLine("2 - Moto");
+                Console.WriteLine("3 - Camion");
+                Console.Write("Opción: ");
+
+                if (int.TryParse(Console.ReadLine(), out int option) && (option >= 1 && option <= 3))
+                {
+                    return option;
+                }
+                else
+                {
+                    Console.WriteLine("Opción inválida. Por favor, ingrese un número entre 1 y 3.\n");
+                }
+            }
+        }
+
+
+        static TipoManillar PedirTipoManillar()
+        {
+
+            while (true)
+            {
+                Console.WriteLine("Selecciona el tipo de manillar:");
+                Console.WriteLine("  1. Recto");
+                Console.WriteLine("  2. Curvo");
+                Console.WriteLine("  3. Deportivo");
+                Console.Write("Ingrese una opción (1-3): ");
+
+                if (int.TryParse(Console.ReadLine(), out int op) &&
+                    Enum.IsDefined(typeof(TipoManillar), op))
+                {
+                    return (TipoManillar)(op);
+                }
+                else
+                {
+                    Console.WriteLine("Opción inválida. Por favor, ingrese un número entre 1 y 3.\n");
+                }
+            }
+        }
+
+
+        static string PedirPatente(string prompt = "Patente: ")
+        {
+            string patente = PedirCadena(prompt, "Debe ingresar una patente válida.");
+
+            if (patente.Trim().Length < 6 || patente.Trim().Length > 7)
+                throw new ValorInvalidoException("La patente debe tener entre 6 y 7 caracteres.");
+
+            return patente;
+        }
+
+
+        static string GestionarActualizacion(string prompt, Func<string> obtenerNuevoValor)
+        {
+            string nuevoValor;
+
+            while (true)
+            {
+                string opt = PedirCadena(prompt + " (Y o N): ", "Opción inválida");
+                opt = opt.Trim().ToUpper();
+
+                if (opt == "Y")
+                {
+                    // Ejecuto la función delegada para obtener el nuevo valor.
+                    // Si la función interna lanza una excepción (ej: ValorInvalidoException),
+                    // el bucle de arriba lo capturará, pero aquí solo se ejecuta.
+                    nuevoValor = obtenerNuevoValor();
+                    break;
+                }
+                else if (opt == "N")
+                {
+                    nuevoValor = "";
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Opción inválida. Por favor, ingrese 'Y' o 'N'.");
+                }
+            }
+            return nuevoValor;
+        }
+
+
     }
 }
