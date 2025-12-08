@@ -7,7 +7,7 @@ namespace KalapujSolU0.Models {
         public double CapacidadDeCarga {
             get => capacidadDeCarga;
             set {
-                if (value <= 0) throw new ArgumentOutOfRangeException(nameof(capacidadDeCarga));
+                ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value, nameof(value));
                 capacidadDeCarga = value;
             }
         }

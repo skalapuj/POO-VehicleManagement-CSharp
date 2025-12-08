@@ -30,6 +30,7 @@ namespace KalapujSolU0.Services
         }
         public void CambiarDirectorio(string nuevaRuta) {
             persistencia.CambiarDirectorio(nuevaRuta);
+            GuardarTodo();
         }
 
         public void BorrarTodo() {

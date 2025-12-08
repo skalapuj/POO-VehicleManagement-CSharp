@@ -290,7 +290,7 @@ namespace KalapujSolU0.IU
                                         "¿Desea actualizar el tipo de manillar?",
                                         () => PedirTipoManillar().ToString()
                                     );
-                                    newtipoManillar = (TipoManillar)(string.IsNullOrEmpty(stringAux) ? 0 : int.Parse(stringAux));
+                                    newtipoManillar = Enum.Parse<TipoManillar>(stringAux, true);
                                 }
                                 else if (stringAux == "Camion")
                                 {
