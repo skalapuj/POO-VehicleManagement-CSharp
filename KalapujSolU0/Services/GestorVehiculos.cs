@@ -36,6 +36,7 @@ namespace KalapujSolU0.Services
         public void BorrarTodo() {
             persistencia.BorrarTodo();
             registroVehiculos.Clear();
+            marcasDisponibles.Clear();
         }
 
         //============== Delegados =============//
