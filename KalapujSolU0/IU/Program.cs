@@ -43,8 +43,6 @@ using KalapujSolU0.Services;
 //     evitando el cierre inesperado del programa y mostrando mensajes claros al usuario.
 //
 // ====================================================
-
-
 // === MODIFICACIONES Y NUEVOS ELEMENTOS - FINAL
 //
 // Refactorización y Modularidad (Funciones Auxiliares):
@@ -70,13 +68,38 @@ using KalapujSolU0.Services;
 //    lo que conllevo a una restructuración general que permita identificar a lo vehículos por
 //    su patente de manera unívoca.
 //
-// Módulo de persistencia con archivos, directorios y JSON.
-//  - En esta etapa se agregaron:
-//      - Guardado de datos en formato JSON
-//      - Carga automática desde el archivo
-//      - Directorio configurable por el usuario
-//      - Archivo de configuración para recordar la carpeta seleccionada
-//      - Función para borrar todos los datos guardados
+// Serialización JSON con soporte para herencia
+//
+//    - Se agregó un constructor vacío en Vehiculo y en cada clase derivada
+//      (Auto, Moto, Camioneta, etc.) para permitir que System.Text.Json
+//      pueda reconstruir los objetos durante la deserialización.
+//
+//    - Se creó la clase VehiculoJsonConverter, un convertidor personalizado
+//      que:
+//          * Lee la propiedad "TipoVehiculo" del JSON
+//          * Instancia la clase concreta correcta (Auto/Moto/…)
+//          * Permite serializar/deserializar vehículos de manera polimórfica
+//
+//    - Las opciones de serialización/deserialización registran este converter
+//      para que funcione en todas las escrituras/lecturas del archivo.
+//
+//
+// Persistencia unificada (DatosCompletosDTO)
+//
+//    - Se agregó la clase DTO DatosCompletosDTO que agrupa:
+//          * La lista de marcas disponibles (List<string>)
+//          * El registro de vehículos con sus dueños
+//
+//    - Persistencia ahora guarda todo en un único archivo JSON,
+//      simplificando la gestión y evitando múltiples fuentes de datos.
+//
+//
+// Ajustes en GestorVehiculos
+//
+//    - Ahora GestorVehiculos delega la lectura/escritura del archivo a
+//      Persistencia, manteniendo la lógica de negocio aislada.
+//    - Se agregaron métodos para cargar y guardar todos los datos al inicio
+//      y al cierre de la aplicación.
 //
 // ====================================================
 

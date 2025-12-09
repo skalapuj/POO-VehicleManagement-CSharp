@@ -28,8 +28,7 @@ namespace KalapujSolU0.Services
         public Persistencia()
         {
             //Directorio base
-            directorioActual = CargarDirectorioConfig();
-            AsegurarDirectorio(directorioActual);
+            directorioActual = CargarDirectorioConfig();            
 
             //Serializacion y deserializacion de Vehiculo
             opcionesSerializacion.Converters.Add(new VehiculoJsonConverter());
@@ -127,10 +126,11 @@ namespace KalapujSolU0.Services
         private string CargarDirectorioConfig()
         {
             try
-            {
+            {                             
                 if (!File.Exists(archivoConfig))
                 {
-                    string defecto = Path.Combine(Environment.CurrentDirectory, "Datos");
+                    string defecto = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Datos");
+                    AsegurarDirectorio(defecto);
                     File.WriteAllText(archivoConfig, defecto);
                     return defecto;
                 }
@@ -138,7 +138,8 @@ namespace KalapujSolU0.Services
                 string ruta = File.ReadAllText(archivoConfig).Trim();
                 if (string.IsNullOrWhiteSpace(ruta))
                 {
-                    string defecto = Path.Combine(Environment.CurrentDirectory, "Datos");
+                    string defecto = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Datos");
+                    AsegurarDirectorio(defecto);
                     File.WriteAllText(archivoConfig, defecto);
                     return defecto;
                 }
@@ -161,12 +162,30 @@ namespace KalapujSolU0.Services
         {
             try
             {
-                if (Directory.Exists(directorioActual))
-                {
-                    Directory.Delete(directorioActual, true);
-                }
+                string rutaNormalizada = Path.GetFullPath(directorioActual);
+                string rutaDefectoNormalizada = Path.GetFullPath(Environment.CurrentDirectory);
 
-                AsegurarDirectorio(directorioActual);
+                string jsonPath = Path.Combine(rutaNormalizada, archivoDatos);
+                string configPath = Path.Combine(rutaDefectoNormalizada, archivoConfig);
+
+                if (File.Exists(jsonPath))
+                    File.Delete(jsonPath);
+
+                if (File.Exists(configPath))
+                    File.Delete(configPath);
+
+                if (   rutaNormalizada.Equals(rutaDefectoNormalizada, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Se eliminaron los datos, pero se mantiene la carpeta por defecto.");
+                }
+                else
+                {
+                    if (Directory.Exists(rutaNormalizada))
+                    {
+                        Directory.Delete(rutaNormalizada, recursive: true);
+                        Console.WriteLine("Directorio externo eliminado por completo.");
+                    }
+                }
 
                 Console.WriteLine("Datos eliminados exitosamente.");
             }

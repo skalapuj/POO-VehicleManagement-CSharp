@@ -11,12 +11,12 @@ namespace KalapujSolU0.Models{
 
         public string Marca {
             get => marca ?? throw new InvalidOperationException("Marca no puede ser null");
-            set => marca = value ?? throw new ArgumentNullException(nameof(Marca));
+            set => marca = value ?? throw new ValorInvalidoException("Marca no puede ser null.");
         }
 
         public string Modelo {
             get => modelo ?? throw new InvalidOperationException("Modelo no puede ser null");
-            set => modelo = value ?? throw new ArgumentNullException(nameof(Modelo));
+            set => modelo = value ?? throw new ValorInvalidoException("Modelo no puede ser null.");
         }
 
         public int Patentamiento {
@@ -31,7 +31,7 @@ namespace KalapujSolU0.Models{
         public decimal Precio {
             get => precio;
             set {
-                if (value <= 0) throw new ArgumentOutOfRangeException(nameof(Precio));
+                if (value <= 0) throw new ValorInvalidoException("El precio debe ser mayor a cero.");
                 precio = value;
             }
         }
@@ -39,7 +39,7 @@ namespace KalapujSolU0.Models{
         public int Cilindrada {
             get => cilindrada;
             set {
-                if (value <= 0) throw new ArgumentOutOfRangeException(nameof(Cilindrada));
+                if (value <= 0) throw new ValorInvalidoException("La cilindrada debe ser mayor a cero.");
                 cilindrada = value;
             }
         }
